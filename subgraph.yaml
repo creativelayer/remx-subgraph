@@ -1,0 +1,56 @@
+specVersion: 0.0.1
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: RevenueSplitter
+    network: rinkeby
+    source:
+      address: "0xF5983CEFE568233D5E5e97469A16D86F37fc6981"
+      abi: RevenueSplitter
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - AddPayeeEvent
+        - BuyEvent
+        - DepositEvent
+        - OwnershipTransferred
+        - PayoutEvent
+        - RegisterCollectionEvent
+        - RoleAdminChanged
+        - RoleGranted
+        - RoleRevoked
+        - RoyaltyEvent
+        - SweepEvent
+        - WithdrawEvent
+      abis:
+        - name: RevenueSplitter
+          file: ./abis/RevenueSplitter.json
+      eventHandlers:
+        - event: AddPayeeEvent(address,address,uint256)
+          handler: handleAddPayeeEvent
+        - event: BuyEvent(address,uint256,uint256)
+          handler: handleBuyEvent
+        - event: DepositEvent(address,address,uint256)
+          handler: handleDepositEvent
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: PayoutEvent(address,uint256)
+          handler: handlePayoutEvent
+        - event: RegisterCollectionEvent(address)
+          handler: handleRegisterCollectionEvent
+        - event: RoleAdminChanged(indexed bytes32,indexed bytes32,indexed bytes32)
+          handler: handleRoleAdminChanged
+        - event: RoleGranted(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleGranted
+        - event: RoleRevoked(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleRevoked
+        - event: RoyaltyEvent(address,uint256)
+          handler: handleRoyaltyEvent
+        - event: SweepEvent(address,address,uint256)
+          handler: handleSweepEvent
+        - event: WithdrawEvent(address,uint256)
+          handler: handleWithdrawEvent
+      file: ./src/mapping.ts
