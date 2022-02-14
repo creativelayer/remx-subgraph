@@ -1,4 +1,3 @@
-import { BigInt } from "@graphprotocol/graph-ts"
 import {
   RevenueSplitter,
   AddPayeeEvent,
@@ -14,56 +13,58 @@ import {
   SweepEvent,
   WithdrawEvent
 } from "../generated/RevenueSplitter/RevenueSplitter"
-import { ExampleEntity } from "../generated/schema"
+import { Record, AccountRecord, Account, Collection, CollectionPayee } from "../generated/schema"
+
+import { Address, log } from '@graphprotocol/graph-ts'
 
 export function handleAddPayeeEvent(event: AddPayeeEvent): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from.toHex())
+  let record = Record.load(event.transaction.hash.toHex())
+  if (!record) {
+    record = new Record(event.transaction.hash.toHex())
+  }
+  record.event = "AddPayee"
 
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (!entity) {
-    entity = new ExampleEntity(event.transaction.from.toHex())
+  let collection = Collection.load(event.params.collection.toHex())
+  if (!collection) {
+    collection = new Collection(event.params.collection.toHex())
+    collection.save()
+  }
+  record.collection = event.params.collection.toHex()
 
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
+  let collectionPayee = CollectionPayee.load(event.params.account.toHex())
+  if (!collectionPayee) {
+    collectionPayee = new CollectionPayee(event.params.account.toHex())
+    collectionPayee.account = collectionPayee.id
+    collectionPayee.collection = event.params.collection.toHex()
+    collectionPayee.shares = event.params.shares.toI32()
   }
 
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
+  record.from = event.transaction.from.toHex()
+  let from = Account.load(record.from)
+  if (!from) {
+    from = new Account(record.from)
+    from.save()
+  }
 
-  // Entity fields can be set based on event parameters
-  entity.param0 = event.params.param0
-  entity.param1 = event.params.param1
+  if (event.transaction.to) {
+    if (!Account.load((event.transaction.to as Address).toHexString())) {
+      new Account((event.transaction.to as Address).toHexString()).save()
+    }
+    record.to = (event.transaction.to as Address).toHexString()
+  }
 
-  // Entities can be written to the store with `.save()`
-  entity.save()
+  record.value = event.transaction.value
+  record.fee = event.transaction.gasPrice
 
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
+  record.save()
 
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.DEFAULT_ADMIN_ROLE(...)
-  // - contract.PAYOUT_ROLE(...)
-  // - contract.balanceOf(...)
-  // - contract.getRoleAdmin(...)
-  // - contract.hasRole(...)
-  // - contract.isRegistered(...)
-  // - contract.owner(...)
-  // - contract.registerCollection(...)
-  // - contract.supportsInterface(...)
+  let accountRecord = AccountRecord.load(`${record.from}-${record.id}`)
+  if (!accountRecord) {
+    accountRecord = new AccountRecord(`${record.from}-${record.id}`)
+    accountRecord.record = record.id
+    accountRecord.account = record.from
+    accountRecord.save()
+  }
 }
 
 export function handleBuyEvent(event: BuyEvent): void {}
@@ -76,7 +77,8 @@ export function handlePayoutEvent(event: PayoutEvent): void {}
 
 export function handleRegisterCollectionEvent(
   event: RegisterCollectionEvent
-): void {}
+): void {
+}
 
 export function handleRoleAdminChanged(event: RoleAdminChanged): void {}
 

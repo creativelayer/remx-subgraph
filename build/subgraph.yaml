@@ -1,6 +1,6 @@
 specVersion: 0.0.2
 schema:
-  file: ./schema.graphql
+  file: schema.graphql
 dataSources:
   - kind: ethereum
     name: RevenueSplitter
@@ -28,7 +28,7 @@ dataSources:
         - WithdrawEvent
       abis:
         - name: RevenueSplitter
-          file: ./abis/RevenueSplitter.json
+          file: RevenueSplitter/abis/RevenueSplitter.json
       eventHandlers:
         - event: AddPayeeEvent(indexed address,indexed address,uint256)
           handler: handleAddPayeeEvent
@@ -54,4 +54,4 @@ dataSources:
           handler: handleSweepEvent
         - event: WithdrawEvent(indexed address,uint256)
           handler: handleWithdrawEvent
-      file: ./src/mapping.ts
+      file: RevenueSplitter/RevenueSplitter.wasm
