@@ -176,4 +176,18 @@ export function handleRoyaltyEvent(event: RoyaltyEvent): void {}
 
 export function handleSweepEvent(event: SweepEvent): void {}
 
-export function handleWithdrawEvent(event: WithdrawEvent): void {}
+export function handleWithdrawEvent(event: WithdrawEvent): void {
+  
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Withdrawal', event.transaction)
+
+  const payee = getAccount(event.params.payee.toHex())
+  record.to = payee.id
+
+  // override the msg.value with the actual amount deposited for the payee
+  record.value = event.params.amount
+  
+  record.save()
+
+  // link the record to the payee
+  getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)  
+}
