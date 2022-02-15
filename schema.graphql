@@ -9,18 +9,28 @@ type Record @entity {
   fee: BigInt # the gas paid for this transaction
 }
 
+# links records to accounts
 type AccountRecord @entity {
-  id: ID!
+  id: ID! # combination of the record and account ids
   record: Record!
   account: Account!
 }
 
+# links records to collections
+type CollectionRecord @entity {
+  id: ID! # combination of the record and collection ids
+  record: Record!
+  collection: Collection!
+}
+
+# is a externally controlled address (e.g. a user's account, not a smart contract)
 type Account @entity {
-  id: ID!
+  id: ID! # address (public key of the account)
   records: [ AccountRecord! ]! @derivedFrom(field: "account")
   collections: [ CollectionPayee! ]! @derivedFrom(field: "account")
 }
 
+# link accounts to a collection to identify who has shares in a collection
 type CollectionPayee @entity {
   id: ID!
   account: Account!
@@ -28,8 +38,9 @@ type CollectionPayee @entity {
   shares: Int
 }
 
+# is an NFT smart contract
 type Collection @entity {
-  id: ID!
+  id: ID! # address of the deployed smart contract
   payees: [ CollectionPayee! ]! @derivedFrom(field: "collection")
-  # records: [ Record! ]! @derivedFrom(field: "collection")
+  records: [ Record! ]! @derivedFrom(field: "collection")
 }

@@ -196,6 +196,62 @@ export class AccountRecord extends Entity {
   }
 }
 
+export class CollectionRecord extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("record", Value.fromString(""));
+    this.set("collection", Value.fromString(""));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save CollectionRecord entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save CollectionRecord entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("CollectionRecord", id.toString(), this);
+    }
+  }
+
+  static load(id: string): CollectionRecord | null {
+    return changetype<CollectionRecord | null>(
+      store.get("CollectionRecord", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get record(): string {
+    let value = this.get("record");
+    return value!.toString();
+  }
+
+  set record(value: string) {
+    this.set("record", Value.fromString(value));
+  }
+
+  get collection(): string {
+    let value = this.get("collection");
+    return value!.toString();
+  }
+
+  set collection(value: string) {
+    this.set("collection", Value.fromString(value));
+  }
+}
+
 export class Account extends Entity {
   constructor(id: string) {
     super();
@@ -349,5 +405,14 @@ export class Collection extends Entity {
 
   set payees(value: Array<string>) {
     this.set("payees", Value.fromStringArray(value));
+  }
+
+  get records(): Array<string> {
+    let value = this.get("records");
+    return value!.toStringArray();
+  }
+
+  set records(value: Array<string>) {
+    this.set("records", Value.fromStringArray(value));
   }
 }
