@@ -18,22 +18,25 @@ import { Record, AccountRecord, Account, Collection, CollectionPayee } from "../
 import { Address, log } from '@graphprotocol/graph-ts'
 
 export function handleAddPayeeEvent(event: AddPayeeEvent): void {
-  let record = Record.load(event.transaction.hash.toHex())
+  const recordId = `${event.transaction.hash.toHex()}-${event.logIndex.toString()}`
+  let record = Record.load(recordId)
   if (!record) {
-    record = new Record(event.transaction.hash.toHex())
+    record = new Record(recordId)
   }
   record.event = "AddPayee"
 
-  let collection = Collection.load(event.params.collection.toHex())
+  const collectionId = event.params.collection.toHex()
+  let collection = Collection.load(collectionId)
   if (!collection) {
-    collection = new Collection(event.params.collection.toHex())
+    collection = new Collection(collectionId)
     collection.save()
   }
-  record.collection = event.params.collection.toHex()
+  record.collection = collectionId
 
-  let collectionPayee = CollectionPayee.load(event.params.account.toHex())
+  const payeeId = event.params.account.toHex()
+  let collectionPayee = CollectionPayee.load(payeeId)
   if (!collectionPayee) {
-    collectionPayee = new CollectionPayee(event.params.account.toHex())
+    collectionPayee = new CollectionPayee(payeeId)
     collectionPayee.account = collectionPayee.id
     collectionPayee.collection = event.params.collection.toHex()
     collectionPayee.shares = event.params.shares.toI32()
@@ -47,10 +50,11 @@ export function handleAddPayeeEvent(event: AddPayeeEvent): void {
   }
 
   if (event.transaction.to) {
-    if (!Account.load((event.transaction.to as Address).toHexString())) {
-      new Account((event.transaction.to as Address).toHexString()).save()
+    const accountId = (event.transaction.to as Address).toHexString()
+    if (!Account.load(accountId)) {
+      new Account(accountId).save()
     }
-    record.to = (event.transaction.to as Address).toHexString()
+    record.to = accountId
   }
 
   record.value = event.transaction.value
@@ -58,9 +62,10 @@ export function handleAddPayeeEvent(event: AddPayeeEvent): void {
 
   record.save()
 
-  let accountRecord = AccountRecord.load(`${record.from}-${record.id}`)
+  const accountRecordId = `${record.from}-${record.id}`
+  let accountRecord = AccountRecord.load(accountRecordId)
   if (!accountRecord) {
-    accountRecord = new AccountRecord(`${record.from}-${record.id}`)
+    accountRecord = new AccountRecord(accountRecordId)
     accountRecord.record = record.id
     accountRecord.account = record.from
     accountRecord.save()
