@@ -15,165 +15,143 @@ import {
 } from "../generated/RevenueSplitter/RevenueSplitter"
 import { Record, AccountRecord, Account, Collection, CollectionPayee , CollectionRecord } from "../generated/schema"
 
-import { Address, log } from '@graphprotocol/graph-ts'
+import { Address, log, ethereum } from '@graphprotocol/graph-ts'
 
-export function handleAddPayeeEvent(event: AddPayeeEvent): void {
-  const recordId = `${event.transaction.hash.toHex()}-${event.logIndex.toString()}`
-  let record = Record.load(recordId)
+function getRecord(id: string, event: string, transaction: ethereum.Transaction): Record {
+  let record = Record.load(id)
   if (!record) {
-    record = new Record(recordId)
+    record = new Record(id)
   }
-  record.event = "AddPayee"
 
-  const collectionId = event.params.collection.toHex()
+  record.value = transaction.value
+  record.fee = transaction.gasPrice
+
+  record.event = event
+  return record
+}
+
+function getCollection(collectionId: string):Collection {
   let collection = Collection.load(collectionId)
   if (!collection) {
     collection = new Collection(collectionId)
     collection.save()
   }
-  record.collection = collectionId
+  return collection
+}
 
-  const payeeId = event.params.account.toHex()
-  let collectionPayee = CollectionPayee.load(payeeId)
+function getAccountRecord(id: string, recordId: string, accountId: string): AccountRecord {
+  let accountRecord = AccountRecord.load(id)
+  if (!accountRecord) {
+    accountRecord = new AccountRecord(id)
+  }
+
+  accountRecord.record = recordId
+  accountRecord.account = accountId
+  accountRecord.save()
+
+  return accountRecord
+
+}
+
+function getCollectionRecord(id: string, recordId: string, collectionId: string): CollectionRecord {
+  let collectionRecord = CollectionRecord.load(id)
+  if (!collectionRecord) {
+    collectionRecord = new CollectionRecord(id)
+  }
+
+  collectionRecord.record = recordId
+  collectionRecord.collection = collectionId
+  collectionRecord.save()
+
+  return collectionRecord
+}
+
+function getAccount(id: string): Account {
+  let account = Account.load(id)
+  if (!account) {
+    account = new Account(id)
+  }
+  account.save()
+  return account
+}
+
+function getCollectionPayee(id: string, collectionId: string, payeeId: string, shares: i32): CollectionPayee {
+  let collectionPayee = CollectionPayee.load(id)
   if (!collectionPayee) {
-    collectionPayee = new CollectionPayee(payeeId)
-    collectionPayee.account = collectionPayee.id
-    collectionPayee.collection = event.params.collection.toHex()
-    collectionPayee.shares = event.params.shares.toI32()
+    collectionPayee = new CollectionPayee(id)
   }
 
-  record.from = event.transaction.from.toHex()
-  let from = Account.load(record.from)
-  if (!from) {
-    from = new Account(record.from)
-    from.save()
-  }
+  collectionPayee.account = payeeId
+  collectionPayee.shares = shares
+  collectionPayee.collection = collectionId
+  collectionPayee.save()
 
+  return collectionPayee
+}
+export function handleAddPayeeEvent(event: AddPayeeEvent): void {
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'AddPayee', event.transaction)
+
+  const collection = getCollection(event.params.collection.toHex())
+  record.collection = collection.id
+
+  // make sure all the accounts exist as entities
+  const payee = getAccount(event.params.account.toHex())
+  record.from = getAccount(event.transaction.from.toHex()).id
+
+  // there may not be a to address (its nullable)
   if (event.transaction.to) {
-    const accountId = (event.transaction.to as Address).toHexString()
-    if (!Account.load(accountId)) {
-      new Account(accountId).save()
-    }
-    record.to = accountId
+    record.to = getAccount((event.transaction.to as Address).toHexString()).id
   }
-
-  record.value = event.transaction.value
-  record.fee = event.transaction.gasPrice
 
   record.save()
 
+  // link the payee to the collection
+  getCollectionPayee(`${collection.id}-${payee.id}}`, collection.id, payee.id, event.params.shares.toI32())
+
   // link the record to the payee so it shows up as the account being added as a payee
-  const accountRecordId = `${payeeId}-${record.id}`
-  let accountRecord = AccountRecord.load(accountRecordId)
-  if (!accountRecord) {
-    accountRecord = new AccountRecord(accountRecordId)
-    accountRecord.record = record.id
-    accountRecord.account = record.from
-    accountRecord.save()
-  }
+  getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)
 
   // link the record to the collection so it shows up as the payee being added to the collection
-  const collectionRecordId = `${collectionId}-${record.id}`
-  let collectionRecord = CollectionRecord.load(collectionRecordId)
-  if (!collectionRecord) {
-    collectionRecord = new CollectionRecord(collectionRecordId)
-    collectionRecord.record = record.id
-    collectionRecord.collection = record.from
-    collectionRecord.save()
-  }
+  getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
 
 }
 
 export function handleBuyEvent(event: BuyEvent): void {
   //emit BuyEvent(_collection, tokenId, msg.value);
-  const recordId = `${event.transaction.hash.toHex()}-${event.logIndex.toString()}`
-  let record = Record.load(recordId)
-  if (!record) {
-    record = new Record(recordId)
-  }
-  record.event = "Buy"
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Buy', event.transaction)
 
-  record.from = event.transaction.from.toHex()
-  let from = Account.load(record.from)
-  if (!from) {
-    from = new Account(record.from)
-    from.save()
-  }
+  record.from = getAccount(event.transaction.from.toHex()).id
 
   if (event.transaction.to) { //always revenue share contract address
-    const accountId = (event.transaction.to as Address).toHexString()
-    if (!Account.load(accountId)) {
-      new Account(accountId).save()
-    }
-    record.to = accountId
+    record.to = getAccount((event.transaction.to as Address).toHexString()).id
   }
 
   // create or fetch collection
   const collectionId = event.params.collection.toHex()
-  let collection = Collection.load(collectionId)
-  if (!collection) {
-    collection = new Collection(collectionId)
-    collection.save()
-  }
+  let collection = getCollection(collectionId)
   record.collection = collectionId
 
   record.token = event.params.tokenId.toI32()
-  // event.params.amount == event.transaction.value
-  record.value = event.transaction.value
-  record.fee = event.transaction.gasPrice
 
   record.save()
 
-  const collectionRecordId = `${record.from}-${record.id}`
-  let collectionRecord = CollectionRecord.load(collectionRecordId)
-  if (!collectionRecord) {
-    collectionRecord = new CollectionRecord(collectionRecordId)
-    collectionRecord.record = record.id
-    collectionRecord.collection = record.from
-    collectionRecord.save()
-  }
-
+  getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
 }
 
 export function handleDepositEvent(event: DepositEvent): void {
   // emit DepositEvent(_collection, _collectionPayee.payee, deposit);
-  const recordId = `${event.transaction.hash.toHex()}-${event.logIndex.toString()}`
-  let record = Record.load(recordId)
-  if (!record) {
-    record = new Record(recordId)
-  }
-  record.event = "Deposit"
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Deposit', event.transaction)
 
-  const collectionId = event.params.collection.toHex()
-  let collection = Collection.load(collectionId)
-  if (!collection) {
-    collection = new Collection(collectionId)
-    collection.save()
-  }
-  record.collection = collectionId
+  const collection = getCollection(event.params.collection.toHex())
+  record.collection = collection.id
 
-  const payeeId = event.params.payee.toHex()
-  let payee = Account.load(payeeId)
-  if (!payee) {
-    payee = new Account(payeeId)
-  }
-  record.to = payeeId
-  
-  record.value = event.params.amount
-  record.fee = event.transaction.gasPrice
+  const payee = getAccount(event.params.payee.toHex())
+  record.to = payee.id
 
   record.save()
 
   // link the record to the payee
-  const accountRecordId = `${payeeId}-${record.id}`
-  let accountRecord = AccountRecord.load(accountRecordId)
-  if (!accountRecord) {
-    accountRecord = new AccountRecord(accountRecordId)
-    accountRecord.record = record.id
-    accountRecord.account = payeeId
-    accountRecord.save()
-  }
-
+  getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)
 }
 
 export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
