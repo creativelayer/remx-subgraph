@@ -148,6 +148,9 @@ export function handleDepositEvent(event: DepositEvent): void {
   const payee = getAccount(event.params.payee.toHex())
   record.to = payee.id
 
+  // override the msg.value with the actual amount deposited for the payee
+  record.value = event.params.amount
+
   record.save()
 
   // link the record to the payee
