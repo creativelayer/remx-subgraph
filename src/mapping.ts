@@ -135,7 +135,46 @@ export function handleBuyEvent(event: BuyEvent): void {
 
 }
 
-export function handleDepositEvent(event: DepositEvent): void {}
+export function handleDepositEvent(event: DepositEvent): void {
+  // emit DepositEvent(_collection, _collectionPayee.payee, deposit);
+  const recordId = `${event.transaction.hash.toHex()}-${event.logIndex.toString()}`
+  let record = Record.load(recordId)
+  if (!record) {
+    record = new Record(recordId)
+  }
+  record.event = "Deposit"
+
+  const collectionId = event.params.collection.toHex()
+  let collection = Collection.load(collectionId)
+  if (!collection) {
+    collection = new Collection(collectionId)
+    collection.save()
+  }
+  record.collection = collectionId
+
+  const payeeId = event.params.payee.toHex()
+  let payee = Account.load(payeeId)
+  if (!payee) {
+    payee = new Account(payeeId)
+  }
+  record.to = payeeId
+  
+  record.value = event.params.amount
+  record.fee = event.transaction.gasPrice
+
+  record.save()
+
+  // link the record to the payee
+  const accountRecordId = `${payeeId}-${record.id}`
+  let accountRecord = AccountRecord.load(accountRecordId)
+  if (!accountRecord) {
+    accountRecord = new AccountRecord(accountRecordId)
+    accountRecord.record = record.id
+    accountRecord.account = payeeId
+    accountRecord.save()
+  }
+
+}
 
 export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
 
