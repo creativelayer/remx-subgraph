@@ -164,7 +164,28 @@ export function handleRegisterCollectionEvent(
 ): void {
 }
 
-export function handleRoyaltyEvent(event: RoyaltyEvent): void {}
+export function handleRoyaltyEvent(event: RoyaltyEvent): void {
+   //emit RoyaltyEvent(_collection, amount);
+   const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Royalty', event.transaction)
+
+   record.from = getAccount(event.transaction.from.toHex()).id
+  
+   if (event.transaction.to) { //always revenue share contract address
+     record.to = getAccount((event.transaction.to as Address).toHexString()).id
+   }
+ 
+   // create or fetch collection
+   const collectionId = event.params.collection.toHex()
+   let collection = getCollection(collectionId)
+   record.collection = collectionId
+ 
+   //override value with amount from event
+   record.value = event.params.amount
+ 
+   record.save()
+ 
+   getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
+}
 
 export function handleSweepEvent(event: SweepEvent): void {}
 
