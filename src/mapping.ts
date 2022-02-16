@@ -157,7 +157,19 @@ export function handleDepositEvent(event: DepositEvent): void {
   getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)
 }
 
-export function handlePayoutEvent(event: PayoutEvent): void {}
+export function handlePayoutEvent(event: PayoutEvent): void {
+  //    emit PayoutEvent(_payee, amount);
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Payout', event.transaction)
+  const payee = getAccount(event.params.payee.toHex())
+  
+  record.to = payee.id
+  record.value = event.params.amount
+
+  record.save()
+
+  //connect to account that was paid
+  getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)
+}
 
 export function handleRegisterCollectionEvent(
   event: RegisterCollectionEvent
@@ -187,7 +199,25 @@ export function handleRoyaltyEvent(event: RoyaltyEvent): void {
    getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
 }
 
-export function handleSweepEvent(event: SweepEvent): void {}
+export function handleSweepEvent(event: SweepEvent): void {
+  //emit SweepEvent(_payee, _recipient, amount);
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Sweep', event.transaction)
+  
+  const payee = getAccount(event.params.payee.toHex())
+  record.from = payee.id
+
+  const recipient = getAccount(event.params.recipient.toHex())
+  record.to = recipient.id
+
+  // override the msg.value with the actual amount swept from the payee
+  record.value = event.params.amount
+
+  record.save()
+
+  // link the record to the payee and the recipient?
+  getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)
+  getAccountRecord(`${record.id}-${recipient.id}`, record.id, recipient.id)
+}
 
 export function handleWithdrawEvent(event: WithdrawEvent): void {
 
