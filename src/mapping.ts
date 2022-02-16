@@ -23,6 +23,13 @@ function getRecord(id: string, event: string, transaction: ethereum.Transaction)
     record = new Record(id)
   }
 
+  record.from = getAccount(transaction.from.toHex()).id
+
+  // there may not be a to address (its nullable)
+  if (transaction.to) {
+    record.to = getAccount((transaction.to as Address).toHexString()).id
+  }
+
   record.value = transaction.value
   record.fee = transaction.gasPrice
 
@@ -88,22 +95,17 @@ function getCollectionPayee(id: string, collectionId: string, payeeId: string, s
 
   return collectionPayee
 }
+
 export function handleAddPayeeEvent(event: AddPayeeEvent): void {
   const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'AddPayee', event.transaction)
 
   const collection = getCollection(event.params.collection.toHex())
   record.collection = collection.id
 
+  record.save()
+
   // make sure all the accounts exist as entities
   const payee = getAccount(event.params.account.toHex())
-  record.from = getAccount(event.transaction.from.toHex()).id
-
-  // there may not be a to address (its nullable)
-  if (event.transaction.to) {
-    record.to = getAccount((event.transaction.to as Address).toHexString()).id
-  }
-
-  record.save()
 
   // link the payee to the collection
   getCollectionPayee(`${collection.id}-${payee.id}}`, collection.id, payee.id, event.params.shares.toI32())
@@ -113,18 +115,11 @@ export function handleAddPayeeEvent(event: AddPayeeEvent): void {
 
   // link the record to the collection so it shows up as the payee being added to the collection
   getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
-
 }
 
 export function handleBuyEvent(event: BuyEvent): void {
   //emit BuyEvent(_collection, tokenId, msg.value);
   const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Buy', event.transaction)
-
-  record.from = getAccount(event.transaction.from.toHex()).id
-
-  if (event.transaction.to) { //always revenue share contract address
-    record.to = getAccount((event.transaction.to as Address).toHexString()).id
-  }
 
   // create or fetch collection
   const collectionId = event.params.collection.toHex()
@@ -145,6 +140,7 @@ export function handleDepositEvent(event: DepositEvent): void {
   const collection = getCollection(event.params.collection.toHex())
   record.collection = collection.id
 
+  // override to so we can see the payee getting the deposit, not the contract
   const payee = getAccount(event.params.payee.toHex())
   record.to = payee.id
 
@@ -160,9 +156,12 @@ export function handleDepositEvent(event: DepositEvent): void {
 export function handlePayoutEvent(event: PayoutEvent): void {
   //    emit PayoutEvent(_payee, amount);
   const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Payout', event.transaction)
+
+  // override to so we can see the payee getting the deposit, not the contract
   const payee = getAccount(event.params.payee.toHex())
-  
   record.to = payee.id
+
+  // override the msg.value with the actual amount deposited for the payee
   record.value = event.params.amount
 
   record.save()
@@ -174,38 +173,35 @@ export function handlePayoutEvent(event: PayoutEvent): void {
 export function handleRegisterCollectionEvent(
   event: RegisterCollectionEvent
 ): void {
+  getCollection(event.params.collection.toHex())
 }
 
 export function handleRoyaltyEvent(event: RoyaltyEvent): void {
    //emit RoyaltyEvent(_collection, amount);
    const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Royalty', event.transaction)
 
-   record.from = getAccount(event.transaction.from.toHex()).id
-  
-   if (event.transaction.to) { //always revenue share contract address
-     record.to = getAccount((event.transaction.to as Address).toHexString()).id
-   }
- 
    // create or fetch collection
    const collectionId = event.params.collection.toHex()
    let collection = getCollection(collectionId)
    record.collection = collectionId
- 
+
    //override value with amount from event
    record.value = event.params.amount
- 
+
    record.save()
- 
+
    getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
 }
 
 export function handleSweepEvent(event: SweepEvent): void {
   //emit SweepEvent(_payee, _recipient, amount);
   const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Sweep', event.transaction)
-  
+
+  // override from so we can see the payee sending the money (not us)
   const payee = getAccount(event.params.payee.toHex())
   record.from = payee.id
 
+  // override to so we can see the actual recipient getting the value
   const recipient = getAccount(event.params.recipient.toHex())
   record.to = recipient.id
 
