@@ -171,9 +171,16 @@ export function handlePayoutEvent(event: PayoutEvent): void {
 }
 
 export function handleRegisterCollectionEvent(
-  event: RegisterCollectionEvent
-): void {
-  getCollection(event.params.collection.toHex())
+  event: RegisterCollectionEvent): void {
+
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'CollectionRegistered', event.transaction)
+
+  const collection = getCollection(event.params.collection.toHex())
+  record.collection = collection.id
+
+  record.save()
+
+  getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)  
 }
 
 export function handleRoyaltyEvent(event: RoyaltyEvent): void {
