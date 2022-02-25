@@ -1,14 +1,11 @@
 import {
   RevenueSplitter,
   AddPayeeEvent,
+  RemovePayeeEvent,
   BuyEvent,
   DepositEvent,
-  OwnershipTransferred,
   PayoutEvent,
-  RegisterCollectionEvent,
-  RoleAdminChanged,
-  RoleGranted,
-  RoleRevoked,
+  CreateCollectionEvent,
   RoyaltyEvent,
   SweepEvent,
   WithdrawEvent
@@ -117,6 +114,10 @@ export function handleAddPayeeEvent(event: AddPayeeEvent): void {
   getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
 }
 
+export function handleRemovePayeeEvent(event: RemovePayeeEvent): void {
+
+}
+
 export function handleBuyEvent(event: BuyEvent): void {
   //emit BuyEvent(_collection, tokenId, msg.value);
   const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Buy', event.transaction)
@@ -170,8 +171,8 @@ export function handlePayoutEvent(event: PayoutEvent): void {
   getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)
 }
 
-export function handleRegisterCollectionEvent(
-  event: RegisterCollectionEvent): void {
+export function handleCreateCollectionEvent(
+  event: CreateCollectionEvent): void {
 
   const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'CollectionRegistered', event.transaction)
 
@@ -180,7 +181,7 @@ export function handleRegisterCollectionEvent(
 
   record.save()
 
-  getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)  
+  getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
 }
 
 export function handleRoyaltyEvent(event: RoyaltyEvent): void {

@@ -62,6 +62,24 @@ export class BuyEvent__Params {
   }
 }
 
+export class CreateCollectionEvent extends ethereum.Event {
+  get params(): CreateCollectionEvent__Params {
+    return new CreateCollectionEvent__Params(this);
+  }
+}
+
+export class CreateCollectionEvent__Params {
+  _event: CreateCollectionEvent;
+
+  constructor(event: CreateCollectionEvent) {
+    this._event = event;
+  }
+
+  get collection(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+}
+
 export class DepositEvent extends ethereum.Event {
   get params(): DepositEvent__Params {
     return new DepositEvent__Params(this);
@@ -132,21 +150,25 @@ export class PayoutEvent__Params {
   }
 }
 
-export class RegisterCollectionEvent extends ethereum.Event {
-  get params(): RegisterCollectionEvent__Params {
-    return new RegisterCollectionEvent__Params(this);
+export class RemovePayeeEvent extends ethereum.Event {
+  get params(): RemovePayeeEvent__Params {
+    return new RemovePayeeEvent__Params(this);
   }
 }
 
-export class RegisterCollectionEvent__Params {
-  _event: RegisterCollectionEvent;
+export class RemovePayeeEvent__Params {
+  _event: RemovePayeeEvent;
 
-  constructor(event: RegisterCollectionEvent) {
+  constructor(event: RemovePayeeEvent) {
     this._event = event;
   }
 
   get collection(): Address {
     return this._event.parameters[0].value.toAddress();
+  }
+
+  get account(): Address {
+    return this._event.parameters[1].value.toAddress();
   }
 }
 
@@ -360,6 +382,45 @@ export class RevenueSplitter extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toBigInt());
   }
 
+  createCollection(
+    name: string,
+    symbol: string,
+    royaltyAmount: BigInt
+  ): Address {
+    let result = super.call(
+      "createCollection",
+      "createCollection(string,string,uint256):(address)",
+      [
+        ethereum.Value.fromString(name),
+        ethereum.Value.fromString(symbol),
+        ethereum.Value.fromUnsignedBigInt(royaltyAmount)
+      ]
+    );
+
+    return result[0].toAddress();
+  }
+
+  try_createCollection(
+    name: string,
+    symbol: string,
+    royaltyAmount: BigInt
+  ): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "createCollection",
+      "createCollection(string,string,uint256):(address)",
+      [
+        ethereum.Value.fromString(name),
+        ethereum.Value.fromString(symbol),
+        ethereum.Value.fromUnsignedBigInt(royaltyAmount)
+      ]
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
   getRoleAdmin(role: Bytes): Bytes {
     let result = super.call("getRoleAdmin", "getRoleAdmin(bytes32):(bytes32)", [
       ethereum.Value.fromFixedBytes(role)
@@ -436,29 +497,6 @@ export class RevenueSplitter extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toAddress());
   }
 
-  registerCollection(_collection: Address): boolean {
-    let result = super.call(
-      "registerCollection",
-      "registerCollection(address):(bool)",
-      [ethereum.Value.fromAddress(_collection)]
-    );
-
-    return result[0].toBoolean();
-  }
-
-  try_registerCollection(_collection: Address): ethereum.CallResult<boolean> {
-    let result = super.tryCall(
-      "registerCollection",
-      "registerCollection(address):(bool)",
-      [ethereum.Value.fromAddress(_collection)]
-    );
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBoolean());
-  }
-
   supportsInterface(interfaceId: Bytes): boolean {
     let result = super.call(
       "supportsInterface",
@@ -480,32 +518,6 @@ export class RevenueSplitter extends ethereum.SmartContract {
     }
     let value = result.value;
     return ethereum.CallResult.fromValue(value[0].toBoolean());
-  }
-}
-
-export class ConstructorCall extends ethereum.Call {
-  get inputs(): ConstructorCall__Inputs {
-    return new ConstructorCall__Inputs(this);
-  }
-
-  get outputs(): ConstructorCall__Outputs {
-    return new ConstructorCall__Outputs(this);
-  }
-}
-
-export class ConstructorCall__Inputs {
-  _call: ConstructorCall;
-
-  constructor(call: ConstructorCall) {
-    this._call = call;
-  }
-}
-
-export class ConstructorCall__Outputs {
-  _call: ConstructorCall;
-
-  constructor(call: ConstructorCall) {
-    this._call = call;
   }
 }
 
@@ -585,6 +597,48 @@ export class BuyNFTCall__Outputs {
   }
 }
 
+export class CreateCollectionCall extends ethereum.Call {
+  get inputs(): CreateCollectionCall__Inputs {
+    return new CreateCollectionCall__Inputs(this);
+  }
+
+  get outputs(): CreateCollectionCall__Outputs {
+    return new CreateCollectionCall__Outputs(this);
+  }
+}
+
+export class CreateCollectionCall__Inputs {
+  _call: CreateCollectionCall;
+
+  constructor(call: CreateCollectionCall) {
+    this._call = call;
+  }
+
+  get name(): string {
+    return this._call.inputValues[0].value.toString();
+  }
+
+  get symbol(): string {
+    return this._call.inputValues[1].value.toString();
+  }
+
+  get royaltyAmount(): BigInt {
+    return this._call.inputValues[2].value.toBigInt();
+  }
+}
+
+export class CreateCollectionCall__Outputs {
+  _call: CreateCollectionCall;
+
+  constructor(call: CreateCollectionCall) {
+    this._call = call;
+  }
+
+  get value0(): Address {
+    return this._call.outputValues[0].value.toAddress();
+  }
+}
+
 export class DepositRoyaltyCall extends ethereum.Call {
   get inputs(): DepositRoyaltyCall__Inputs {
     return new DepositRoyaltyCall__Inputs(this);
@@ -649,6 +703,32 @@ export class GrantRoleCall__Outputs {
   }
 }
 
+export class InitializeCall extends ethereum.Call {
+  get inputs(): InitializeCall__Inputs {
+    return new InitializeCall__Inputs(this);
+  }
+
+  get outputs(): InitializeCall__Outputs {
+    return new InitializeCall__Outputs(this);
+  }
+}
+
+export class InitializeCall__Inputs {
+  _call: InitializeCall;
+
+  constructor(call: InitializeCall) {
+    this._call = call;
+  }
+}
+
+export class InitializeCall__Outputs {
+  _call: InitializeCall;
+
+  constructor(call: InitializeCall) {
+    this._call = call;
+  }
+}
+
 export class PayoutCall extends ethereum.Call {
   get inputs(): PayoutCall__Inputs {
     return new PayoutCall__Inputs(this);
@@ -679,37 +759,37 @@ export class PayoutCall__Outputs {
   }
 }
 
-export class RegisterCollectionCall extends ethereum.Call {
-  get inputs(): RegisterCollectionCall__Inputs {
-    return new RegisterCollectionCall__Inputs(this);
+export class RemoveCollectionPayeeCall extends ethereum.Call {
+  get inputs(): RemoveCollectionPayeeCall__Inputs {
+    return new RemoveCollectionPayeeCall__Inputs(this);
   }
 
-  get outputs(): RegisterCollectionCall__Outputs {
-    return new RegisterCollectionCall__Outputs(this);
+  get outputs(): RemoveCollectionPayeeCall__Outputs {
+    return new RemoveCollectionPayeeCall__Outputs(this);
   }
 }
 
-export class RegisterCollectionCall__Inputs {
-  _call: RegisterCollectionCall;
+export class RemoveCollectionPayeeCall__Inputs {
+  _call: RemoveCollectionPayeeCall;
 
-  constructor(call: RegisterCollectionCall) {
+  constructor(call: RemoveCollectionPayeeCall) {
     this._call = call;
   }
 
   get _collection(): Address {
     return this._call.inputValues[0].value.toAddress();
   }
+
+  get _payee(): Address {
+    return this._call.inputValues[1].value.toAddress();
+  }
 }
 
-export class RegisterCollectionCall__Outputs {
-  _call: RegisterCollectionCall;
+export class RemoveCollectionPayeeCall__Outputs {
+  _call: RemoveCollectionPayeeCall;
 
-  constructor(call: RegisterCollectionCall) {
+  constructor(call: RemoveCollectionPayeeCall) {
     this._call = call;
-  }
-
-  get value0(): boolean {
-    return this._call.outputValues[0].value.toBoolean();
   }
 }
 
