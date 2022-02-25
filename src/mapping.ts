@@ -12,7 +12,7 @@ import {
 } from "../generated/RevenueSplitter/RevenueSplitter"
 import { Record, AccountRecord, Account, Collection, CollectionPayee , CollectionRecord } from "../generated/schema"
 
-import { Address, log, ethereum } from '@graphprotocol/graph-ts'
+import { Address, log, ethereum, store } from '@graphprotocol/graph-ts'
 
 function getRecord(id: string, event: string, transaction: ethereum.Transaction): Record {
   let record = Record.load(id)
@@ -115,7 +115,17 @@ export function handleAddPayeeEvent(event: AddPayeeEvent): void {
 }
 
 export function handleRemovePayeeEvent(event: RemovePayeeEvent): void {
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'RemovePayee', event.transaction)
+  const collection = getCollection(event.params.collection.toHex())
+  record.collection = collection.id
 
+  record.save()
+
+  // make sure all the accounts exist as entities
+  const payee = getAccount(event.params.account.toHex())
+
+  // disconnect the payee from the collection by removing the related entity
+  store.remove('CollectionPayee', `${collection.id}-${payee.id}}`)
 }
 
 export function handleBuyEvent(event: BuyEvent): void {
