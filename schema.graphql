@@ -7,6 +7,7 @@ type Record @entity {
   to: Account # the address of the recipient of the collaborator, if applicable
   value: BigInt # the value of the transaction, in wei
   fee: BigInt # the gas paid for this transaction
+  timestamp: BigInt # the timestamp for the transaction
 }
 
 # links records to accounts

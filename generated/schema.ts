@@ -140,6 +140,23 @@ export class Record extends Entity {
       this.set("fee", Value.fromBigInt(<BigInt>value));
     }
   }
+
+  get timestamp(): BigInt | null {
+    let value = this.get("timestamp");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set timestamp(value: BigInt | null) {
+    if (!value) {
+      this.unset("timestamp");
+    } else {
+      this.set("timestamp", Value.fromBigInt(<BigInt>value));
+    }
+  }
 }
 
 export class AccountRecord extends Entity {

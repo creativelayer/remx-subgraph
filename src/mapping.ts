@@ -10,11 +10,12 @@ import {
   SweepEvent,
   WithdrawEvent
 } from "../generated/RevenueSplitter/RevenueSplitter"
-import { Record, AccountRecord, Account, Collection, CollectionPayee , CollectionRecord } from "../generated/schema"
+import { Record, AccountRecord, Account, Collection, CollectionPayee, CollectionRecord } from "../generated/schema"
 
 import { Address, log, ethereum, store } from '@graphprotocol/graph-ts'
 
-function getRecord(id: string, event: string, transaction: ethereum.Transaction): Record {
+function getRecord(id: string, eventType: string, event: ethereum.Event): Record {
+  const transaction = event.transaction
   let record = Record.load(id)
   if (!record) {
     record = new Record(id)
@@ -29,12 +30,13 @@ function getRecord(id: string, event: string, transaction: ethereum.Transaction)
 
   record.value = transaction.value
   record.fee = transaction.gasPrice
+  record.timestamp = event.block.timestamp
 
-  record.event = event
+  record.event = eventType
   return record
 }
 
-function getCollection(collectionId: string):Collection {
+function getCollection(collectionId: string): Collection {
   let collection = Collection.load(collectionId)
   if (!collection) {
     collection = new Collection(collectionId)
@@ -94,7 +96,7 @@ function getCollectionPayee(id: string, collectionId: string, payeeId: string, s
 }
 
 export function handleAddPayeeEvent(event: AddPayeeEvent): void {
-  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'AddPayee', event.transaction)
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'AddPayee', event)
 
   const collection = getCollection(event.params.collection.toHex())
   record.collection = collection.id
@@ -115,7 +117,7 @@ export function handleAddPayeeEvent(event: AddPayeeEvent): void {
 }
 
 export function handleRemovePayeeEvent(event: RemovePayeeEvent): void {
-  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'RemovePayee', event.transaction)
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'RemovePayee', event)
   const collection = getCollection(event.params.collection.toHex())
   record.collection = collection.id
 
@@ -130,7 +132,7 @@ export function handleRemovePayeeEvent(event: RemovePayeeEvent): void {
 
 export function handleBuyEvent(event: BuyEvent): void {
   //emit BuyEvent(_collection, tokenId, msg.value);
-  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Buy', event.transaction)
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Buy', event)
 
   // create or fetch collection
   const collectionId = event.params.collection.toHex()
@@ -146,7 +148,7 @@ export function handleBuyEvent(event: BuyEvent): void {
 
 export function handleDepositEvent(event: DepositEvent): void {
   // emit DepositEvent(_collection, _collectionPayee.payee, deposit);
-  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Deposit', event.transaction)
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Deposit', event)
 
   const collection = getCollection(event.params.collection.toHex())
   record.collection = collection.id
@@ -166,7 +168,7 @@ export function handleDepositEvent(event: DepositEvent): void {
 
 export function handlePayoutEvent(event: PayoutEvent): void {
   //    emit PayoutEvent(_payee, amount);
-  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Payout', event.transaction)
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Payout', event)
 
   // override to so we can see the payee getting the deposit, not the contract
   const payee = getAccount(event.params.payee.toHex())
@@ -184,7 +186,7 @@ export function handlePayoutEvent(event: PayoutEvent): void {
 export function handleCreateCollectionEvent(
   event: CreateCollectionEvent): void {
 
-  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'CollectionRegistered', event.transaction)
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'CollectionRegistered', event)
 
   const collection = getCollection(event.params.collection.toHex())
   record.collection = collection.id
@@ -195,25 +197,25 @@ export function handleCreateCollectionEvent(
 }
 
 export function handleRoyaltyEvent(event: RoyaltyEvent): void {
-   //emit RoyaltyEvent(_collection, amount);
-   const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Royalty', event.transaction)
+  //emit RoyaltyEvent(_collection, amount);
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Royalty', event)
 
-   // create or fetch collection
-   const collectionId = event.params.collection.toHex()
-   let collection = getCollection(collectionId)
-   record.collection = collectionId
+  // create or fetch collection
+  const collectionId = event.params.collection.toHex()
+  let collection = getCollection(collectionId)
+  record.collection = collectionId
 
-   //override value with amount from event
-   record.value = event.params.amount
+  //override value with amount from event
+  record.value = event.params.amount
 
-   record.save()
+  record.save()
 
-   getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
+  getCollectionRecord(`${record.id}-${collection.id}`, record.id, collection.id)
 }
 
 export function handleSweepEvent(event: SweepEvent): void {
   //emit SweepEvent(_payee, _recipient, amount);
-  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Sweep', event.transaction)
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Sweep', event)
 
   // override from so we can see the payee sending the money (not us)
   const payee = getAccount(event.params.payee.toHex())
@@ -235,7 +237,7 @@ export function handleSweepEvent(event: SweepEvent): void {
 
 export function handleWithdrawEvent(event: WithdrawEvent): void {
 
-  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Withdrawal', event.transaction)
+  const record = getRecord(`${event.transaction.hash.toHex()}-${event.logIndex.toString()}`, 'Withdrawal', event)
 
   const payee = getAccount(event.params.payee.toHex())
   record.to = payee.id
