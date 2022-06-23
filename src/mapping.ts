@@ -107,7 +107,7 @@ export function handleAddPayeeEvent(event: AddPayeeEvent): void {
   const payee = getAccount(event.params.account.toHex())
 
   // link the payee to the collection
-  getCollectionPayee(`${collection.id}-${payee.id}}`, collection.id, payee.id, event.params.shares.toI32())
+  getCollectionPayee(`${collection.id}-${payee.id}`, collection.id, payee.id, event.params.shares.toI32())
 
   // link the record to the payee so it shows up as the account being added as a payee
   getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)
@@ -137,6 +137,9 @@ export function handleBuyEvent(event: BuyEvent): void {
   // create or fetch collection
   const collectionId = event.params.collection.toHex()
   let collection = getCollection(collectionId)
+  collection.totalRevenue = collection.totalRevenue.plus(event.transaction.value)
+  collection.save()
+
   record.collection = collectionId
 
   record.token = event.params.tokenId.toI32()
@@ -155,12 +158,20 @@ export function handleDepositEvent(event: DepositEvent): void {
 
   // override to so we can see the payee getting the deposit, not the contract
   const payee = getAccount(event.params.payee.toHex())
+  payee.totalRevenue = payee.totalRevenue.plus(event.transaction.value)
+  payee.save()
   record.to = payee.id
 
   // override the msg.value with the actual amount deposited for the payee
   record.value = event.params.amount
 
   record.save()
+
+  let collectionPayee = CollectionPayee.load(`${collection.id}-${payee.id}`)
+  if (collectionPayee) {
+    collectionPayee.totalRevenue = collectionPayee.totalRevenue.plus(event.transaction.value)
+    collectionPayee.save()
+  }
 
   // link the record to the payee
   getAccountRecord(`${record.id}-${payee.id}`, record.id, payee.id)

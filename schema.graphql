@@ -29,6 +29,7 @@ type Account @entity {
   id: ID! # address (public key of the account)
   records: [ AccountRecord! ]! @derivedFrom(field: "account")
   collections: [ CollectionPayee! ]! @derivedFrom(field: "account")
+  totalRevenue: BigInt!
 }
 
 # link accounts to a collection to identify who has shares in a collection
@@ -36,7 +37,8 @@ type CollectionPayee @entity {
   id: ID!
   account: Account!
   collection: Collection!
-  shares: Int
+  shares: Int!
+  totalRevenue: BigInt!
 }
 
 # is an NFT smart contract
@@ -44,4 +46,5 @@ type Collection @entity {
   id: ID! # address of the deployed smart contract
   payees: [ CollectionPayee! ]! @derivedFrom(field: "collection")
   records: [ Record! ]! @derivedFrom(field: "collection")
+  totalRevenue: BigInt!
 }
