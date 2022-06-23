@@ -273,6 +273,8 @@ export class Account extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
+
+    this.set("totalRevenue", Value.fromBigInt(BigInt.zero()));
   }
 
   save(): void {
@@ -318,6 +320,15 @@ export class Account extends Entity {
   set collections(value: Array<string>) {
     this.set("collections", Value.fromStringArray(value));
   }
+
+  get totalRevenue(): BigInt {
+    let value = this.get("totalRevenue");
+    return value!.toBigInt();
+  }
+
+  set totalRevenue(value: BigInt) {
+    this.set("totalRevenue", Value.fromBigInt(value));
+  }
 }
 
 export class CollectionPayee extends Entity {
@@ -327,6 +338,8 @@ export class CollectionPayee extends Entity {
 
     this.set("account", Value.fromString(""));
     this.set("collection", Value.fromString(""));
+    this.set("shares", Value.fromI32(0));
+    this.set("totalRevenue", Value.fromBigInt(BigInt.zero()));
   }
 
   save(): void {
@@ -381,12 +394,23 @@ export class CollectionPayee extends Entity {
   set shares(value: i32) {
     this.set("shares", Value.fromI32(value));
   }
+
+  get totalRevenue(): BigInt {
+    let value = this.get("totalRevenue");
+    return value!.toBigInt();
+  }
+
+  set totalRevenue(value: BigInt) {
+    this.set("totalRevenue", Value.fromBigInt(value));
+  }
 }
 
 export class Collection extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
+
+    this.set("totalRevenue", Value.fromBigInt(BigInt.zero()));
   }
 
   save(): void {
@@ -431,5 +455,14 @@ export class Collection extends Entity {
 
   set records(value: Array<string>) {
     this.set("records", Value.fromStringArray(value));
+  }
+
+  get totalRevenue(): BigInt {
+    let value = this.get("totalRevenue");
+    return value!.toBigInt();
+  }
+
+  set totalRevenue(value: BigInt) {
+    this.set("totalRevenue", Value.fromBigInt(value));
   }
 }
