@@ -158,7 +158,7 @@ export function handleDepositEvent(event: DepositEvent): void {
 
   // override to so we can see the payee getting the deposit, not the contract
   const payee = getAccount(event.params.payee.toHex())
-  payee.totalRevenue = payee.totalRevenue.plus(event.transaction.value)
+  payee.totalRevenue = payee.totalRevenue.plus(event.params.amount)
   payee.save()
   record.to = payee.id
 
@@ -169,7 +169,7 @@ export function handleDepositEvent(event: DepositEvent): void {
 
   let collectionPayee = CollectionPayee.load(`${collection.id}-${payee.id}`)
   if (collectionPayee) {
-    collectionPayee.totalRevenue = collectionPayee.totalRevenue.plus(event.transaction.value)
+    collectionPayee.totalRevenue = collectionPayee.totalRevenue.plus(event.params.amount)
     collectionPayee.save()
   }
 
