@@ -28,5 +28,5 @@ To update `mainnet` with changes from main
 
 ```
 $ git checkout mainnet
-$ git merge develop
+$ git merge main
 ```
