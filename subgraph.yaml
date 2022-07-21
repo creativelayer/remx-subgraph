@@ -3,12 +3,12 @@ schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum
-    name: RevenueSplitter
+    name: RevenueSplitter-qa
     network: rinkeby
     source:
-      address: "0x7F46b3d4ce251f63ca5E2998f10a772ED75cb27e"
+      address: "0x958bD49C7A22a639e1E57914e41162f675f0d9Fd"
       abi: RevenueSplitter
-      startBlock: 10623115
+      startBlock: 11063375
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
