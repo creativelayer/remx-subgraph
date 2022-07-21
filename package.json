@@ -1,13 +1,13 @@
 {
-  "name": "remx-production",
+  "name": "remx-develop",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ creativelayer/remx-production",
-    "create-local": "graph create --node http://localhost:8020/ creativelayer/remx-production",
-    "remove-local": "graph remove --node http://localhost:8020/ creativelayer/remx-production",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 creativelayer/remx-production"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ creativelayer/remx-develop",
+    "create-local": "graph create --node http://localhost:8020/ creativelayer/remx-develop",
+    "remove-local": "graph remove --node http://localhost:8020/ creativelayer/remx-develop",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 creativelayer/remx-develop"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.26.0",
