@@ -1,13 +1,13 @@
 {
-  "name": "remx-subgraph",
+  "name": "revenuesplitter-local",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ creativelayer/remx-subgraph",
-    "create-local": "graph create --node http://localhost:8020/ creativelayer/remx-subgraph",
-    "remove-local": "graph remove --node http://localhost:8020/ creativelayer/remx-subgraph",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 creativelayer/remx-subgraph"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ creativelayer/revenuesplitter-local",
+    "create-local": "graph create --node http://localhost:8020/ creativelayer/revenuesplitter-local",
+    "remove-local": "graph remove --node http://localhost:8020/ creativelayer/revenuesplitter-local",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 creativelayer/revenuesplitter-local"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.26.0",
