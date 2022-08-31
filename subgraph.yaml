@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: RevenueSplitter-qa
-    network: rinkeby
+    network: goerli
     source:
-      address: "0x958bD49C7A22a639e1E57914e41162f675f0d9Fd"
+      address: "0x09D5ac2204f3cab9e63e6Ec65e505aa40d234630"
       abi: RevenueSplitter
-      startBlock: 11063375
+      startBlock: 7476126
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
