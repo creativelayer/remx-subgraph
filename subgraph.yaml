@@ -4,7 +4,7 @@ schema:
 dataSources:
   - kind: ethereum
     name: RevenueSplitter-dev
-    network: rinkeby
+    network: goerli
     source:
       address: "0xD75aC366ee644A9cb146686Ed3283158C2E6765f"
       abi: RevenueSplitter
