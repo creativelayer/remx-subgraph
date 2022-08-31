@@ -6,9 +6,9 @@ dataSources:
     name: RevenueSplitter-dev
     network: rinkeby
     source:
-      address: "0xF07Fcc84635da8b8159E827eDEBfC80081f03537"
+      address: "0xD75aC366ee644A9cb146686Ed3283158C2E6765f"
       abi: RevenueSplitter
-      startBlock: 11063371
+      startBlock: 7476116
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
